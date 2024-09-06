@@ -75,4 +75,4 @@ For other Multimodal VAE implementations see [here](https://arxiv.org/pdf/2209.0
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE file](LICENSE) for more details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
