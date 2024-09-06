@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This project contains a PyTorch implementation of a Multimodal Variational Recurrent Neural Network (MM-VRNN) and a Multimodal Variational Autoencoder (MM-VAE). The same were used to produce part of the results for the PhD Thesis ["On Wiring Emotion to Words: A Bayesian Model", 2022](https://air.unimi.it/bitstream/2434/932589/2/phd_unimi_R12197.pdf) that included a multimodal generative approach to modelling affect dynamics.
+This project contains a PyTorch implementation of a Multimodal Variational Recurrent Neural Network (MM-VRNN) and a Multimodal Variational Autoencoder (MM-VAE). The same were used to produce part of the results for the PhD Thesis ["On Wiring Emotion to Words: A Bayesian Model" (2022)](https://air.unimi.it/bitstream/2434/932589/2/phd_unimi_R12197.pdf) that included a multimodal generative approach to modelling affect dynamics.
 
 The *Variational Autoencoder (VAE)* is a generative model first introduced by [Kingma et al. (2013)](https://arxiv.org/abs/1312.6114). To learn more about the VAE, aside from the original paper I would recommend [this blog post](https://lilianweng.github.io/posts/2018-08-12-vae/). The *Variational Recurrent Neural Network (VRNN)* by [Chung et al. (2015)](https://arxiv.org/abs/1511.06349) is instead a development over the standard recurrent neural network (RNN) that includes a VAE to learn a latent representation of the input data at each time step. The VRNN, containing the core of a RNN, allows for improved modelling of temporal dynamics in sequential data w.r.t. both standard RNNs and standard VAEs.
 
@@ -10,13 +10,13 @@ This repository focuses on rendering both these models multimodal, so that they 
 
 There's more than one approach to making a ML model multimodal, and thus there are other implementations of multimodal VAEs and VRNNs, of which the most relevant are listed in the [References](#references) section. This project takes the following two approaches, respectively:
 
-+ For the MM-VAE, each modality get its own encoder and decoder. During enconding, the latent space is shared and the inferences of each modality are joined through an expert layer. In the decoding process, each modality's decoder receives the latent variable sample as input and produces a reconstruction of the original data. The only expert implemented here is a non-learnable Product of Experts. This approach is very similar to the approach of [Wu and Goodman, 2018](https://arxiv.org/pdf/1802.05335).
++ For the MM-VAE, each modality get its own encoder and decoder. During enconding, the latent space is shared and the inferences of each modality are joined through an expert layer. In the decoding process, each modality's decoder receives the latent variable sample as input and produces a reconstruction of the original data. The only expert implemented here is a non-learnable Product of Experts. This approach is very similar to the approach of [Wu and Goodman (2018)](https://arxiv.org/pdf/1802.05335).
 
 + For the MM-VRNN, the approach is different. Here, the original model is kept the same and an additional layer is added for both the encoding and decoding process. In the inference stage each modality gets its own encoder and the encodings are fused by simple vector concatenation. In the case of missing modalities, a zero tensor of appropriate dimensions is passed forward. This then gets passed to the following layer, which is the input layer of the original VRNN. In the decoding process, the latent variable is sampled and passed to each modality's decoder, which then produces a reconstruction of the original data.
 
 Both of the above approaches effectively allow for arbitrary conditioning and missing modalities, which are extremely important for any real-world application of a multimodal ML model. The expert approach could be relatively easily improved by learning the expert's weights from data. Instead, the concatenation approach is more rudimentary, and using a predefined value for the missing modalities is not optimal. However, it was chosen for its simplicity, flexiblity and because it doesn't require modifying significantly the original model architecture, which is quite complex as it is.
 
-Emphasis was placed on code clarity and modularity, and therefore there is some redundancy in the code. But this allows for easy understanding of the model and its components, and modifying the code for future developments. Furthermore, both models have been tried and tested in the context of multimodal affective computing and produce good results, but require some hyperparameter tuning to get the best results.
+Emphasis was placed on code clarity and modularity, and therefore there is some redundancy in the code. This allows for easy understanding of the model and its components, and modifying the code for future improvements. Furthermore, both models have been tried and tested in the context of multimodal affective computing and produce good results, but require some hyperparameter tuning for optimal performance.
 
 ## Installation
 
@@ -28,7 +28,7 @@ pip install -r requirements.txt
 
 ## Features and Usage
 
-The primary contribution of this project are the MM-VAE and MM-VRNN modules contained in [src/model](src/model/). This folder further contains the `Expert` abstract class with the appropriate method signature for forward, along with a Product of Experts implementation. The modules are intended to be modular and extensible. It takes in input other modules for each modality, which you should construct yourself and pass as arguments to the constructor. This offers flexibility regarding modalities and networks that process them. You could easily use an MLP, CNN, or any other network architecture you deem useful for your problem.
+The primary contribution of this project are the MM-VAE and MM-VRNN modules contained in [src/model](src/model/). This folder further contains the `Expert` abstract class with the appropriate method signature for `forward()`, along with a Product of Experts implementation. The modules are intended to be modular and extensible. It takes in input other modules for each modality, which you should construct yourself and pass as arguments to the constructor. This offers flexibility regarding the type of modalities and networks that process them. You could easily use an MLP, CNN, or any other network architecture you deem useful for your problem.
 
 In addition, provided in [src](src/) are two toy examples of how to train the models, one for the MM-VAE and another for the MM-VRNN, respectively. In the sections below you can find more details on particular aspects of the implementation. To run the examples run:
 
@@ -60,11 +60,11 @@ There are reasons to believe, as per the work of [Fu et al. (2019)](https://arxi
 
 At least in the case of the MM-VRNN, the network has to somehow learn how a missing modality is represented due to the way the model is structured. This constrains us to include missing modalities in the training phase. Similar reasoning also stands in the case of the MM-VAE, and it is beneficial to include missing modalities in the during training. For $N$ modalities, there are $2^N - 2$ viable possible combinations of missing modalities, so using them all systematically would result in a very large number of training cycles. An alternative approach is to use modality dropout, a technique where, during training, one or more modalities are randomly removed from the input data. This has the benefit of improving robustness and preventing over-reliance on any single modality.
 
-Modality dropout was first introduced in [Neverova et al. (2015)](https://arxiv.org/pdf/1501.00102). In this project, however, a very rudimentary form of it is implemented where a dropout probability is set, and if triggered, one or more modalities (sampled uniformly) are randomly removed from the input data at each iteration.
+Modality dropout was first introduced in [Neverova et al. (2015)](https://arxiv.org/pdf/1501.00102). In this project, however, a very rudimentary form of it is implemented where a dropout probability is set, and if triggered, one or more modalities (sampled uniformly) are randomly removed from the input data at each iteration. This is one aspect of this project that could significantly boost model performance if improved.
 
 ## References
 
-**Other multimodal VRNN implementations** (the list is not exhaustive, and the order is irrelevant):
+Other multimodal VRNN implementations (the list is not exhaustive, and the order is irrelevant):
 
 + [Multimodal Deep Markov Model (MDMM)](https://github.com/ztangent/multimodal-dmm)
 + [A Multimodal Predictive Agent Model for Human Interaction Generation](https://openaccess.thecvf.com/content_CVPRW_2020/papers/w66/Baruah_A_Multimodal_Predictive_Agent_Model_for_Human_Interaction_Generation_CVPRW_2020_paper.pdf)
